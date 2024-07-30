@@ -4,7 +4,7 @@ import android.content.Context
 import com.crossbowffs.remotepreferences.RemotePreferences
 import com.wangyiheng.vcamsx.data.models.VideoStatues
 import com.google.gson.Gson
-import com.wangyiheng.vcamsx.data.models.VideoInfo
+import com.wangyiheng.vcamsx.data.models.VideoInfos
 
 class InfoManager(context: Context) {
     val prefs = RemotePreferences(context, "com.wangyiheng.vcamsx.preferences", "main_prefs")
@@ -27,21 +27,21 @@ class InfoManager(context: Context) {
         prefs.edit().remove("videoStatus").apply()
     }
 
-    fun saveVideoInfo(videoInfo: VideoInfo) {
-        val jsonString = gson.toJson(videoInfo)
-        prefs.edit().putString("videoInfo", jsonString).apply()
+    fun saveVideoInfos(videoInfos: VideoInfos) {
+        val jsonString = gson.toJson(videoInfos)
+        prefs.edit().putString("videoInfos", jsonString).apply()
     }
 
-    fun getVideoInfo(): VideoInfo? {
-        val jsonString = prefs.getString("videoInfo", null)
+    fun getVideoInfos(): VideoInfos? {
+        val jsonString = prefs.getString("videoInfos", null)
         return if (jsonString != null) {
-            gson.fromJson(jsonString, VideoInfo::class.java)
+            gson.fromJson(jsonString, VideoInfos::class.java)
         } else {
             null
         }
     }
 
-    fun removeVideoInfo() {
-        prefs.edit().remove("videoInfo").apply()
+    fun removeVideoInfos() {
+        prefs.edit().remove("videoInfos").apply()
     }
 }

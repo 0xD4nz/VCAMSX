@@ -21,9 +21,11 @@ object VideoPlayer {
     var ijkMediaPlayer: IjkMediaPlayer? = null
     var mediaPlayer: MediaPlayer? = null
     var c3_player: MediaPlayer? = null
-    var copyReaderSurface:Surface? = null
-    var currentRunningSurface:Surface? = null
-    private val scheduledExecutor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+    var copyReaderSurface: Surface? = null
+    var currentRunningSurface: Surface? = null
+    private val scheduledExecutor: ScheduledExecutorService =
+        Executors.newSingleThreadScheduledExecutor()
+
     init {
         // 初始化代码...
         startTimerTask()
@@ -42,9 +44,9 @@ object VideoPlayer {
         restartMediaPlayer()
     }
 
-    fun restartMediaPlayer(){
-        if(videoStatus?.isVideoEnable == true || videoStatus?.isLiveStreamingEnabled == true) return
-        if(currentRunningSurface == null || currentRunningSurface?.isValid == false) return
+    fun restartMediaPlayer() {
+        if (videoStatus?.isVideoEnable == true || videoStatus?.isLiveStreamingEnabled == true) return
+        if (currentRunningSurface == null || currentRunningSurface?.isValid == false) return
         releaseMediaPlayer()
     }
 
@@ -77,7 +79,7 @@ object VideoPlayer {
             setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0)
             setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec_mpeg4", 1)
 //            setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "analyzemaxduration", 100L)
-             setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "analyzemaxduration", 5000L)
+            setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "analyzemaxduration", 5000L)
             setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "probesize", 2048L)
 //            setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "probesize", 1024L)
             setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "flush_packets", 1L)
@@ -106,26 +108,42 @@ object VideoPlayer {
     }
 
 
-    fun initMediaPlayer(surface:Surface){
+    fun initMediaPlayer(surface: Surface) {
         val volume = if (videoStatus?.volume == true) 1F else 0F
+        val videoUrl = "content://com.wangyiheng.vcamsx.videoprovider"
+        val videoPathUri = Uri.parse(videoUrl)
         mediaPlayer = MediaPlayer().apply {
-            isLooping = true
-            setSurface(surface)
-            setVolume(volume,volume)
-            setOnPreparedListener { start() }
-            val videoPathUri = Uri.parse("content://com.wangyiheng.vcamsx.videoprovider")
-            context?.let { setDataSource(it, videoPathUri) }
-            prepare()
+            try {
+                isLooping = true
+                if (surface.isValid) {
+                    setSurface(surface)
+                } else {
+                    Toast.makeText(context!!, "初始化异常: surface", Toast.LENGTH_LONG).show()
+                }
+                setDataSource(context!!, videoPathUri)
+                prepareAsync() // 异步准备MediaPlayer
+                setVolume(volume, volume)
+                setOnPreparedListener {
+                    start() // 准备完成后开始播放
+                }
+                setOnPreparedListener { start() }
+                setOnErrorListener { mp, what, extra ->
+                    // 处理播放错误
+                    true
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context!!, "初始化异常: ${e.message}", Toast.LENGTH_LONG).show()
+                // 处理设置数据源或其他操作时的异常
+            }
         }
     }
 
 
-
-    fun initializeTheStateAsWellAsThePlayer(){
+    fun initializeTheStateAsWellAsThePlayer() {
         InfoProcesser.initStatus()
 
-        if(ijkMediaPlayer == null){
-            if(videoStatus?.isLiveStreamingEnabled == true){
+        if (ijkMediaPlayer == null) {
+            if (videoStatus?.isLiveStreamingEnabled == true) {
                 initRTMPStreamPlayer()
             }
         }
@@ -137,6 +155,9 @@ object VideoPlayer {
         try {
             // 数据初始化
             InfoProcesser.initStatus()
+            // player 初始化
+            // 销毁当前的 player
+            releaseMediaPlayer()
 
             videoStatus?.also { status ->
                 if (!status.isVideoEnable && !status.isLiveStreamingEnabled) return
@@ -150,6 +171,7 @@ object VideoPlayer {
                             it.setSurface(surface)
                         }
                     }
+
                     else -> {
                         mediaPlayer?.also {
                             if (it.isPlaying) {
@@ -178,8 +200,8 @@ object VideoPlayer {
     }
 
 
-    fun releaseMediaPlayer(){
-        if(mediaPlayer == null)return
+    fun releaseMediaPlayer() {
+        if (mediaPlayer == null) return
         mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
@@ -200,14 +222,14 @@ object VideoPlayer {
     fun c1_camera_play() {
         if (original_c1_preview_SurfaceTexture != null) {
             original_preview_Surface = Surface(original_c1_preview_SurfaceTexture)
-            if(original_preview_Surface!!.isValid == true){
+            if (original_preview_Surface!!.isValid == true) {
                 handleMediaPlayer(original_preview_Surface!!)
             }
         }
 
-        if(oriHolder?.surface != null){
+        if (oriHolder?.surface != null) {
             original_preview_Surface = oriHolder?.surface
-            if(original_preview_Surface!!.isValid == true){
+            if (original_preview_Surface!!.isValid == true) {
                 handleMediaPlayer(original_preview_Surface!!)
             }
         }
@@ -217,14 +239,14 @@ object VideoPlayer {
         }
     }
 
-    fun c2_reader_play(c2_reader_Surfcae:Surface){
-        if(c2_reader_Surfcae == copyReaderSurface){
+    fun c2_reader_play(c2_reader_Surfcae: Surface) {
+        if (c2_reader_Surfcae == copyReaderSurface) {
             return
         }
 
         copyReaderSurface = c2_reader_Surfcae
 
-        if(c2_hw_decode_obj != null){
+        if (c2_hw_decode_obj != null) {
             c2_hw_decode_obj!!.stopDecode()
             c2_hw_decode_obj = null
         }
@@ -236,8 +258,8 @@ object VideoPlayer {
             c2_hw_decode_obj!!.setSaveFrames(OutputImageFormat.NV21)
             c2_hw_decode_obj!!.set_surface(c2_reader_Surfcae)
             c2_hw_decode_obj!!.decode(videoPathUri)
-        }catch (e:Exception){
-            Log.d("dbb",e.toString())
+        } catch (e: Exception) {
+            Log.d("dbb", e.toString())
         }
     }
 

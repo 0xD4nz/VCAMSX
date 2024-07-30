@@ -12,7 +12,6 @@ import android.hardware.camera2.params.SessionConfiguration
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
-import android.util.Log
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.widget.Toast
@@ -71,10 +70,6 @@ class MainHook : IXposedHookLoadPackage {
         if(lpparam.packageName == "com.wangyiheng.vcamsx"){
             return
         }
-//        if(lpparam.processName.contains(":")) {
-//            Log.d(TAG,"当前进程："+lpparam.processName)
-//            return
-//        }
 
         //获取context
         XposedHelpers.findAndHookMethod(
@@ -269,7 +264,11 @@ class MainHook : IXposedHookLoadPackage {
                                     super.beforeHookedMethod(param)
                                     if (param.args[0] != null) {
                                         sessionConfiguration = param.args[0] as SessionConfiguration
-                                        outputConfiguration = OutputConfiguration(c2_virtual_surface)
+                                        outputConfiguration = c2_virtual_surface?.let {
+                                            OutputConfiguration(
+                                                it
+                                            )
+                                        }
                                         fake_sessionConfiguration = SessionConfiguration(
                                             sessionConfiguration!!.getSessionType(),
                                             Arrays.asList<OutputConfiguration>(outputConfiguration),

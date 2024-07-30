@@ -9,76 +9,62 @@ import android.view.SurfaceHolder
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.wangyiheng.vcamsx.MainHook
-import com.wangyiheng.vcamsx.data.models.UploadIpRequest
 import com.wangyiheng.vcamsx.data.models.VideoInfo
+import com.wangyiheng.vcamsx.data.models.VideoInfos
 import com.wangyiheng.vcamsx.data.models.VideoStatues
 import com.wangyiheng.vcamsx.data.services.ApiService
 import com.wangyiheng.vcamsx.utils.InfoManager
-import com.wangyiheng.vcamsx.utils.VideoPlayer
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import tv.danmaku.ijk.media.player.IjkMediaPlayer
-import java.io.File
 import java.io.IOException
-import java.net.URL
 
-class HomeController: ViewModel(),KoinComponent {
+class HomeController : ViewModel(), KoinComponent {
     val apiService: ApiService by inject()
     val context by inject<Context>()
-    val isVideoEnabled  = mutableStateOf(false)
+    val isVideoEnabled = mutableStateOf(false)
     val isVolumeEnabled = mutableStateOf(false)
+    val selector = mutableStateOf(false)
     val videoPlayer = mutableStateOf(1)
     val codecType = mutableStateOf(false)
     val isLiveStreamingEnabled = mutableStateOf(false)
 
     val infoManager by inject<InfoManager>()
     var ijkMediaPlayer: IjkMediaPlayer? = null
-    var mediaPlayer:MediaPlayer? = null
-    val isLiveStreamingDisplay =  mutableStateOf(false)
-    val isVideoDisplay =  mutableStateOf(false)
-//    rtmp://ns8.indexforce.com/home/mystream
+    var mediaPlayer: MediaPlayer? = null
+    val isLiveStreamingDisplay = mutableStateOf(false)
+    val isVideoDisplay = mutableStateOf(false)
+
+    //    rtmp://ns8.indexforce.com/home/mystream
     var liveURL = mutableStateOf("rtmp://ns8.indexforce.com/home/mystream")
 
-    fun init(){
+    fun init() {
         getState()
-        saveImage()
-    }
-    suspend fun getPublicIpAddress(): String? = withContext(Dispatchers.IO) {
-        try {
-            URL("https://api.ipify.org").readText()
-        } catch (ex: Exception) {
-            null
-        }
     }
 
+    fun copyVideoToAppDir(context: Context, videoUris: List<Uri>) {
+        infoManager.removeVideoInfos()
 
-    fun saveImage() {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val ipAddress = getPublicIpAddress()
-                if (ipAddress != null) {
-                    apiService.uploadIp(UploadIpRequest(ipAddress))
-                }
-            } catch (e: Exception) {
-                Log.d("错误", "${e.message}")
-            }
+        val videos = mutableListOf<VideoInfo>()
+
+        // 只收录前两个
+        for (i in 0 until minOf(videoUris.size, 2)) {
+            videos.add(VideoInfo(videoId = i, videoUrl = videoUris[i].toString()))
         }
+
+        val videoInfos = VideoInfos(videos = videos)
+        infoManager.saveVideoInfos(videoInfos)
+
+        val conf = infoManager.getVideoInfos()
     }
-    fun copyVideoToAppDir(context: Context,videoUri: Uri) {
-        infoManager.removeVideoInfo()
-        infoManager.saveVideoInfo(VideoInfo(videoUrl=videoUri.toString()))
-    }
+
     fun saveState() {
         infoManager.removeVideoStatus()
         infoManager.saveVideoStatus(
             VideoStatues(
                 isVideoEnabled.value,
                 isVolumeEnabled.value,
+                selector.value,
                 videoPlayer.value,
                 codecType.value,
                 isLiveStreamingEnabled.value,
@@ -87,10 +73,11 @@ class HomeController: ViewModel(),KoinComponent {
         )
     }
 
-    fun getState(){
+    fun getState() {
         infoManager.getVideoStatus()?.let {
             isVideoEnabled.value = it.isVideoEnable
             isVolumeEnabled.value = it.volume
+            selector.value = it.selector
             videoPlayer.value = it.videoPlayer
             codecType.value = it.codecType
             isLiveStreamingEnabled.value = it.isLiveStreamingEnabled
@@ -102,7 +89,6 @@ class HomeController: ViewModel(),KoinComponent {
     fun playVideo(holder: SurfaceHolder) {
         val videoUrl = "content://com.wangyiheng.vcamsx.videoprovider"
         val videoPathUri = Uri.parse(videoUrl)
-
         mediaPlayer = MediaPlayer().apply {
             try {
                 isLooping = true
@@ -134,7 +120,11 @@ class HomeController: ViewModel(),KoinComponent {
                 // 硬件解码设置,0为软解，1为硬解
                 setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0)
                 setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 1)
-                setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-handle-resolution-change", 1)
+                setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_PLAYER,
+                    "mediacodec-handle-resolution-change",
+                    1
+                )
 
                 // 缓冲设置
                 setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1)
@@ -174,12 +164,12 @@ class HomeController: ViewModel(),KoinComponent {
                     start()
                 }
             } catch (e: Exception) {
-                Log.d("vcamsx","播放报错$e")
+                Log.d("vcamsx", "播放报错$e")
             }
         }
     }
 
-    fun release(){
+    fun release() {
         ijkMediaPlayer?.stop()
         ijkMediaPlayer?.release()
         ijkMediaPlayer = null
