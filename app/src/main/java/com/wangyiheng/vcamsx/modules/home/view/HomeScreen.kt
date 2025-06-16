@@ -41,11 +41,11 @@ fun HomeScreen() {
                 selectVideoLauncher.launch("video/*")
             } else {
                 if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    // 在 Android 9 (Pie) 及以下版本，请求 READ_EXTERNAL_STORAGE 权限
-                    Toast.makeText(context, "请打开设置允许读取文件夹权限", Toast.LENGTH_SHORT)
+                    // On Android 9 (Pie) and below, request READ_EXTERNAL_STORAGE permission
+                    Toast.makeText(context, "Please enable permission to read folders in settings.", Toast.LENGTH_SHORT)
                         .show()
                 } else {
-                    // 在 Android 10 及以上版本，直接访问视频文件，无需请求权限
+                    // On Android 10 and above, directly access video files without requesting permission
                     selectVideoLauncher.launch("video/*")
                 }
             }
@@ -69,7 +69,7 @@ fun HomeScreen() {
             TextField(
                 value = homeController.liveURL.value,
                 onValueChange = { homeController.liveURL.value = it },
-                label = { Text("RTMP链接：") }
+                label = { Text("RTMP URL:") }
             )
 
             Button(
@@ -78,17 +78,17 @@ fun HomeScreen() {
                     homeController.saveState()
                 }
             ) {
-                Text("保存RTMP链接")
+                Text("Save RTMP URL")
             }
 
             Button(
                 modifier = buttonModifier,
                 onClick = {
-                    Toast.makeText(context, "请按照循序选择两个视频，不要多选", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Please select two videos in sequence, do not select more.", Toast.LENGTH_SHORT).show()
                     requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
                 }
             ) {
-                Text("选择视频")
+                Text("Select Video")
             }
 
             Button(
@@ -97,7 +97,7 @@ fun HomeScreen() {
                     homeController.isVideoDisplay.value = true
                 }
             ) {
-                Text("查看视频")
+                Text("View Video")
             }
 
             Button(
@@ -106,49 +106,49 @@ fun HomeScreen() {
                     homeController.isLiveStreamingDisplay.value = true
                 }
             ) {
-                Text("查看直播推流")
+                Text("View Live Stream")
             }
 
             SettingRow(
-                label = "视频开关",
+                label = "Video Switch",
                 checkedState = homeController.isVideoEnabled,
                 onCheckedChange = { homeController.saveState() },
                 context = context
             )
 
             SettingRow(
-                label = "主次视频切换开关",
+                label = "Main/Secondary Video Switch",
                 checkedState = homeController.selector,
                 onCheckedChange = {
-                    // 并且切换新的 player
+                    // And switch to new player
                     homeController.saveState()
                 },
                 context = context
             )
 
             SettingRow(
-                label = "直播推流开关",
+                label = "Live Stream Switch",
                 checkedState = homeController.isLiveStreamingEnabled,
                 onCheckedChange = { homeController.saveState() },
                 context = context
             )
 
             SettingRow(
-                label = "音量开关",
+                label = "Volume Switch",
                 checkedState = homeController.isVolumeEnabled,
                 onCheckedChange = { homeController.saveState() },
                 context = context
             )
 
             SettingRow(
-                label = if (homeController.codecType.value) "硬解码" else "软解码",
+                label = if (homeController.codecType.value) "Hardware Decoding" else "Software Decoding",
                 checkedState = homeController.codecType,
                 onCheckedChange = {
                     if (homeController.isH264HardwareDecoderSupport()) {
                         homeController.saveState()
                     } else {
                         homeController.codecType.value = false
-                        Toast.makeText(context, "不支持硬解码", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Hardware decoding not supported", Toast.LENGTH_SHORT).show()
                     }
                 },
                 context = context
@@ -159,7 +159,6 @@ fun HomeScreen() {
         VideoPlayerDialog(homeController)
     }
 }
-
 
 @Preview
 @Composable
