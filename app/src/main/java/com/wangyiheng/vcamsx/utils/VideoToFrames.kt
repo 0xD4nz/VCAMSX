@@ -1,7 +1,6 @@
 package com.wangyiheng.vcamsx.utils
 
 import android.content.ContentValues
-import android.content.ContentValues.TAG
 import android.graphics.*
 import android.media.*
 import android.net.Uri
@@ -22,7 +21,7 @@ class VideoToFrames : Runnable {
     private var outputImageFormat: OutputImageFormat? = null
     private var videoFilePath: Any? = null
     private var childThread: Thread? = null
-    private var throwable: Throwable? = null // 定义 throwable 变量
+    private var throwable: Throwable? = null // Define throwable variable
     private val decodeColorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible
     private var play_surf: Surface? = null
     private val DEFAULT_TIMEOUT_US: Long = 10000
@@ -45,8 +44,8 @@ class VideoToFrames : Runnable {
         outputImageFormat = imageFormat
     }
 
-    fun set_surface(player_surface:Surface){
-        if(player_surface != null){
+    fun set_surface(player_surface: Surface) {
+        if (player_surface != null) {
             play_surf = player_surface
         }
     }
@@ -63,7 +62,7 @@ class VideoToFrames : Runnable {
 
     override fun run() {
         try {
-            Log.d("vcamsxtoast","------开始解码------")
+            Log.d("vcamsxtoast", "------Start Decoding------")
             videoFilePath?.let { videoDecode(it) }
         } catch (t: Throwable) {
             throwable = t
@@ -77,14 +76,14 @@ class VideoToFrames : Runnable {
         try {
             extractor = MediaExtractor().apply {
                 when (videoPath) {
-                    is String -> setDataSource(videoPath) // 当参数是 String 时
-                    is Uri -> context?.let { setDataSource(it, videoPath, null) } // 当参数是 Uri 时
+                    is String -> setDataSource(videoPath) // If the parameter is String
+                    is Uri -> context?.let { setDataSource(it, videoPath, null) } // If the parameter is Uri
                     else -> throw IllegalArgumentException("Unsupported video path type")
                 }
             }
             val trackIndex = selectTrack(extractor)
             if (trackIndex < 0) {
-                XposedBridge.log("&#8203;``【oaicite:5】``&#8203;&#8203;``【oaicite:4】``&#8203;No video track found in $videoFilePath")
+                XposedBridge.log("No video track found in $videoFilePath")
             }
             extractor.selectTrack(trackIndex)
             val mediaFormat = extractor.getTrackFormat(trackIndex)
@@ -93,10 +92,10 @@ class VideoToFrames : Runnable {
             showSupportedColorFormat(decoder.codecInfo.getCapabilitiesForType(mime))
             if (isColorFormatSupported(decodeColorFormat, decoder.codecInfo.getCapabilitiesForType(mime))) {
                 mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, decodeColorFormat)
-                XposedBridge.log("&#8203;``【oaicite:3】``&#8203;&#8203;``【oaicite:2】``&#8203;set decode color format to type $decodeColorFormat")
+                XposedBridge.log("Set decode color format to type $decodeColorFormat")
             } else {
-                Log.i(ContentValues.TAG, "unable to set decode color format, color format type $decodeColorFormat not supported")
-                XposedBridge.log("&#8203;``【oaicite:1】``&#8203;&#8203;``【oaicite:0】``&#8203;unable to set decode color format, color format type $decodeColorFormat not supported")
+                Log.i(ContentValues.TAG, "Unable to set decode color format, color format type $decodeColorFormat not supported")
+                XposedBridge.log("Unable to set decode color format, color format type $decodeColorFormat not supported")
             }
             decodeFramesToImage(decoder, extractor, mediaFormat)
             decoder.stop()
@@ -108,17 +107,18 @@ class VideoToFrames : Runnable {
         } catch (e: Exception) {
             // Handle exceptions
         } finally {
-            if(decoder != null) {
+            if (decoder != null) {
                 decoder.stop()
                 decoder.release()
                 decoder = null
             }
-            if(extractor != null) {
+            if (extractor != null) {
                 extractor.release()
                 extractor = null
             }
         }
     }
+
     private fun selectTrack(extractor: MediaExtractor): Int {
         val numTracks = extractor.trackCount
         for (i in 0 until numTracks) {
@@ -191,7 +191,6 @@ class VideoToFrames : Runnable {
                         mQueue?.put(arr)
 
                         if (outputImageFormat != null) {
-//                            MainHook.data_buffer  =bitmapToYUV( imageToBitmap(image))
                             MainHook.data_buffer = getDataFromImage(image)
                         }
                         image.close()
@@ -202,8 +201,8 @@ class VideoToFrames : Runnable {
                         try {
                             Thread.sleep(sleepTime)
                         } catch (e: InterruptedException) {
-                            XposedBridge.log("&#8203;``【oaicite:1】``&#8203;" + e.toString())
-                            XposedBridge.log("&#8203;``【oaicite:0】``&#8203;线程延迟出错")
+                            XposedBridge.log(e.toString())
+                            XposedBridge.log("Thread delay error")
                         }
                     }
                     decoder.releaseOutputBuffer(outputBufferId, true)
@@ -227,14 +226,14 @@ class VideoToFrames : Runnable {
             ImageFormat.DEPTH_JPEG -> "DEPTH_JPEG"
             ImageFormat.DEPTH16 -> "DEPTH16"
             ImageFormat.DEPTH_POINT_CLOUD -> "DEPTH_POINT_CLOUD"
-            // 添加更多格式根据需要
+            // Add more formats as needed
             else -> "Unknown format: $format"
         }
         Log.d("vcamsx", "Image format is $formatString")
     }
 
     fun imageToBitmap(image: Image): Bitmap {
-        Log.d("vcamsx",image.format.toString())
+        Log.d("vcamsx", image.format.toString())
         val yBuffer = image.planes[0].buffer // Y
         val uBuffer = image.planes[1].buffer // U
         val vBuffer = image.planes[2].buffer // V
@@ -245,7 +244,7 @@ class VideoToFrames : Runnable {
 
         val nv21 = ByteArray(ySize + uSize + vSize)
 
-        // YUV_420_888数据转NV21
+        // YUV_420_888 data to NV21
         yBuffer.get(nv21, 0, ySize)
         vBuffer.get(nv21, ySize, vSize)
         uBuffer.get(nv21, ySize + vSize, uSize)
@@ -257,12 +256,6 @@ class VideoToFrames : Runnable {
         val imageBytes = out.toByteArray()
         return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
     }
-
-//    fun bitmapToByteArray(bitmap: Bitmap, format: Bitmap.CompressFormat, quality: Int): ByteArray {
-//        val stream = ByteArrayOutputStream()
-//        bitmap.compress(format, quality, stream)
-//        return stream.toByteArray()
-//    }
 
     fun bitmapToYUV(bitmap: Bitmap): ByteArray {
         val width = bitmap.width
@@ -293,7 +286,6 @@ class VideoToFrames : Runnable {
     }
 
     private fun getDataFromImage(image: Image): ByteArray {
-
         logImageFormat(image)
         if (!isImageFormatSupported(image)) {
             throw RuntimeException("can't convert Image to byte array, format ${image.format}")
@@ -307,7 +299,16 @@ class VideoToFrames : Runnable {
         val data = ByteArray(width * height * pixelFormatBits / 8)
         val rowData = ByteArray(planes[0].rowStride)
 
-        fun copyPlaneData(planeIndex: Int, buffer: ByteBuffer, rowStride: Int, pixelStride: Int, width: Int, height: Int, channelOffset: Int, outputStride: Int) {
+        fun copyPlaneData(
+            planeIndex: Int,
+            buffer: ByteBuffer,
+            rowStride: Int,
+            pixelStride: Int,
+            width: Int,
+            height: Int,
+            channelOffset: Int,
+            outputStride: Int
+        ) {
             var outputOffset = channelOffset
             buffer.position(rowStride * (crop.top / 2) + pixelStride * (crop.left / 2))
             for (row in 0 until height) {
@@ -340,15 +341,11 @@ class VideoToFrames : Runnable {
         copyPlaneData(0, planes[0].buffer, planes[0].rowStride, planes[0].pixelStride, width, height, channelOffset, 1)
         channelOffset += width * height
 
-
         copyPlaneData(1, planes[2].buffer, planes[2].rowStride, planes[2].pixelStride, uvWidth, uvHeight, channelOffset, 2)
         copyPlaneData(2, planes[1].buffer, planes[1].rowStride, planes[1].pixelStride, uvWidth, uvHeight, channelOffset + 1, 2)
 
-
         return data
     }
-
-
 
     private fun isImageFormatSupported(image: Image): Boolean {
         val format = image.format
@@ -360,7 +357,6 @@ class VideoToFrames : Runnable {
     }
 }
 
-
 enum class OutputImageFormat(val friendlyName: String) {
     I420("I420"),
     NV21("NV21"),
@@ -368,4 +364,3 @@ enum class OutputImageFormat(val friendlyName: String) {
 
     override fun toString() = friendlyName
 }
-
