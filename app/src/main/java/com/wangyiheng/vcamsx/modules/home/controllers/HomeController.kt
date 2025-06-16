@@ -47,7 +47,7 @@ class HomeController : ViewModel(), KoinComponent {
 
         val videos = mutableListOf<VideoInfo>()
 
-        // 只收录前两个
+        // Only take the first two
         for (i in 0 until minOf(videoUris.size, 2)) {
             videos.add(VideoInfo(videoId = i, videoUrl = videoUris[i].toString()))
         }
@@ -85,39 +85,37 @@ class HomeController : ViewModel(), KoinComponent {
         }
     }
 
-
     fun playVideo(holder: SurfaceHolder) {
         val videoUrl = "content://com.wangyiheng.vcamsx.videoprovider"
         val videoPathUri = Uri.parse(videoUrl)
         mediaPlayer = MediaPlayer().apply {
             try {
                 isLooping = true
-                setSurface(holder.surface) // 使用SurfaceHolder的surface
-                setDataSource(context, videoPathUri) // 设置数据源
-                prepareAsync() // 异步准备MediaPlayer
+                setSurface(holder.surface) // Use SurfaceHolder's surface
+                setDataSource(context, videoPathUri) // Set data source
+                prepareAsync() // Prepare MediaPlayer asynchronously
 
-                // 设置准备监听器
+                // Set prepared listener
                 setOnPreparedListener {
-                    start() // 准备完成后开始播放
+                    start() // Start playing when prepared
                 }
 
-                // 可选：设置错误监听器
+                // Optional: set error listener
                 setOnErrorListener { mp, what, extra ->
-                    // 处理播放错误
+                    // Handle playback error
                     true
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
-                // 处理设置数据源或其他操作时的异常
+                // Handle exceptions when setting data source or other operations
             }
         }
     }
 
-
     fun playRTMPStream(holder: SurfaceHolder, rtmpUrl: String) {
         ijkMediaPlayer = IjkMediaPlayer().apply {
             try {
-                // 硬件解码设置,0为软解，1为硬解
+                // Hardware decoding setting: 0 for software, 1 for hardware
                 setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0)
                 setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 1)
                 setOption(
@@ -126,7 +124,7 @@ class HomeController : ViewModel(), KoinComponent {
                     1
                 )
 
-                // 缓冲设置
+                // Buffering settings
                 setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1)
                 setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0)
                 setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec_mpeg4", 1)
@@ -136,35 +134,35 @@ class HomeController : ViewModel(), KoinComponent {
                 setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 1L)
                 setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 1L)
 
-                // 错误监听器
+                // Error listener
                 setOnErrorListener { _, what, extra ->
                     Log.e("IjkMediaPlayer", "Error occurred. What: $what, Extra: $extra")
-                    Toast.makeText(context, "直播接收失败$what", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Live stream receive failed: $what", Toast.LENGTH_SHORT).show()
                     true
                 }
 
-                // 信息监听器
+                // Info listener
                 setOnInfoListener { _, what, extra ->
                     Log.i("IjkMediaPlayer", "Info received. What: $what, Extra: $extra")
                     true
                 }
 
-                // 设置 RTMP 流的 URL
+                // Set RTMP stream URL
                 dataSource = rtmpUrl
 
-                // 设置视频输出的 SurfaceHolder
+                // Set video output SurfaceHolder
                 setDisplay(holder)
 
-                // 异步准备播放器
+                // Prepare the player asynchronously
                 prepareAsync()
 
-                // 当播放器准备好后，开始播放
+                // When the player is prepared, start playing
                 setOnPreparedListener {
-                    Toast.makeText(context, "直播接收成功，可以进行投屏", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Live stream received successfully. You can now cast.", Toast.LENGTH_SHORT).show()
                     start()
                 }
             } catch (e: Exception) {
-                Log.d("vcamsx", "播放报错$e")
+                Log.d("vcamsx", "Playback error: $e")
             }
         }
     }
@@ -197,4 +195,3 @@ class HomeController : ViewModel(), KoinComponent {
         }
     }
 }
-
