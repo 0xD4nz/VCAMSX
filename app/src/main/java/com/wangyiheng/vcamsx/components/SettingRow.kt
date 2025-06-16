@@ -19,7 +19,8 @@ fun SettingRow(
     onCheckedChange: (Boolean) -> Unit,
     context: Context
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -29,7 +30,7 @@ fun SettingRow(
             onCheckedChange = {
                 checkedState.value = it
                 onCheckedChange(it)
-                Toast.makeText(context, if (it) "$label 打开" else "$label 关闭", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, if (it) "$label ON" else "$label OFF", Toast.LENGTH_SHORT).show()
             }
         )
     }
