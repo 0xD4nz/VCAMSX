@@ -18,7 +18,7 @@ class VideoProvider : ContentProvider(), KoinComponent {
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
         val videoInfos = infoManager.getVideoInfos()
         val videoStatus = infoManager.getVideoStatus()
-        // 默认打开第一个
+        // By default, open the first video
         var index = 0
         if (videoStatus!!.selector) {
             index = 1
@@ -27,10 +27,10 @@ class VideoProvider : ContentProvider(), KoinComponent {
         val fixedUri = Uri.parse(url)
 
         return try {
-            // 直接使用ContentResolver打开固定URI指向的文件的ParcelFileDescriptor
+            // Directly use ContentResolver to open the file pointed to by the fixed URI and get its ParcelFileDescriptor
             context!!.contentResolver.openFileDescriptor(fixedUri, mode)
-        } catch (e: Exception) { // 捕获所有异常，包括FileNotFoundException
-            Log.e("Error", "打开文件失败: ${e.message}")
+        } catch (e: Exception) { // Catch all exceptions, including FileNotFoundException
+            Log.e("Error", "Failed to open file: ${e.message}")
             null
         }
     }
@@ -38,7 +38,7 @@ class VideoProvider : ContentProvider(), KoinComponent {
     override fun openAssetFile(uri: Uri, mode: String): AssetFileDescriptor? {
         val videoInfos = infoManager.getVideoInfos()
         val videoStatus = infoManager.getVideoStatus()
-        // 默认打开第一个
+        // By default, open the first video
         var index = 0
         if (videoStatus!!.selector) {
             index = 1
@@ -48,15 +48,14 @@ class VideoProvider : ContentProvider(), KoinComponent {
 
         return try {
             context!!.contentResolver.openAssetFileDescriptor(fixedUri, mode)
-        } catch (e: Exception) { // 捕获所有异常，包括FileNotFoundException
-            Log.e("Error", "打开文件失败: ${e.message}")
+        } catch (e: Exception) { // Catch all exceptions, including FileNotFoundException
+            Log.e("Error", "Failed to open file: ${e.message}")
             null
         }
     }
 
-
     override fun onCreate(): Boolean {
-        // 初始化内容提供器
+        // Initialize content provider
         return true
     }
 
@@ -78,17 +77,17 @@ class VideoProvider : ContentProvider(), KoinComponent {
         selectionArgs: Array<String>?,
         sortOrder: String?
     ): Cursor {
-        // 创建MatrixCursor
+        // Create MatrixCursor
         val cursor = MatrixCursor(arrayOf("_id", "display_name", "size", "date_modified", "file"))
         val path = context?.getExternalFilesDir(null)!!.absolutePath
         val file = File(path, "advancedModeMovies/654e1835b70883406c4640c3/caibi_60.mp4")
-        // 获取视频文件夹路径
+        // Get the video folder path
         cursor.addRow(arrayOf(0, file.name, file.length(), file.lastModified(), file))
 
         return cursor
     }
 
-    // 其他方法根据需要实现，这里为了简单起见，我们留空
+    // Other methods can be implemented as needed; left empty here for simplicity
     override fun getType(uri: Uri): String? = null
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int = 0
